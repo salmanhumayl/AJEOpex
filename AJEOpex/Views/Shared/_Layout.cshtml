@@ -1,0 +1,102 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - My ASP.NET Application</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/jquery")
+    
+    @Scripts.Render("~/bundles/modernizr")
+
+
+
+    <script>
+        function ShowConfirm(message, Title, Value, closevalue) {
+            $(function () {
+
+                if ($("#dialog").dialog("instance") != undefined) {
+                    $("#dialog").dialog("destroy");
+                }
+                var ErrorType = 'Confirm'
+                var imagepath = "/Content/Meassagebox/Icons/" + ErrorType + ".png";
+
+                message = message = "<table colspan='0' cellspacing='0' border='0' width='340px'><tr><td  width='40px'><image src='" + imagepath + "'></image></td><td  width='300px'>" + message + "</td></tr></table>";
+
+                $("#dialog").html(message);
+                $("#dialog").dialog(
+                    { resizable: false },
+                    { width: 400 },
+                    {
+                        title: Title,
+                        buttons: {
+                            "Yes": function (e) {
+                                e.preventDefault();
+                                if (Value.length != 0) {
+                                    if (Value == "c") {
+                                        SaveOpex();
+                                    }
+                                    else {
+                                        window.location.href = Value;
+                                    }
+
+                                }
+                                else {
+                                    window.location.reload(true);
+                                }
+                                $(this).dialog("close");
+                            }, "No": function () {
+                                $(this).dialog("close");
+                                if (closevalue != "") {
+                                    window.close();
+                                    window.location.href = 'http://ajes-inapp/AJESAppraisal';
+                                }
+                                return false;
+
+                            }
+                        },
+                        modal: true
+                    });
+                $(".selector").dialog("option", "closeOnEscape", false);
+            });
+            return false;
+        };
+
+
+
+    </script>
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                @Html.ActionLink("AJC", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Budget Opex", "Opex", "Budget")</li>
+                    <li>@Html.ActionLink("Budget Capex", "About", "Home")</li>
+                    <li>@Html.ActionLink("Dashboard", "Index", "Dasboard")</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; @DateTime.Now.Year - AJC</p>
+        </footer>
+    </div>
+    @Scripts.Render("~/bundles/jqueryui")
+    @Scripts.Render("~/bundles/bootstrap")
+    
+    @RenderSection("scripts", required: false)
+    <div id="dialog" style="display: none"></div>
+</body>
+</html>

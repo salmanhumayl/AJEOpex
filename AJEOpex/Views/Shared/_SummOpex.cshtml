@@ -1,0 +1,58 @@
+﻿@model IEnumerable<AJEOpex.Models.OpexSummaryViewModel>
+<h2>Opex Summary</h2>
+<table class="table table-hover">
+    <tr>
+        <th>
+            Sr.
+        </th>
+        <th>
+            Budget Category
+        </th>
+        <th>
+            Actual
+        </th>
+        <th>
+           Budget YTD
+        </th>
+        <th>
+            Var % 
+        </th>
+        <th>
+            Comments
+        </th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            
+            @Html.DisplayFor(modelItem => item.Sr)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Description)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Actual)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.BudgetYTD)
+        </td>
+        <td>
+            @if (item.BudgetVar > 0)
+            {
+                
+                @Html.DisplayFor(modelItem => item.BudgetVar)
+            }
+            else
+            { @Html.DisplayFor(modelItem => item.BudgetVar)
+            }
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Comments)
+        </td>
+      
+    </tr>
+}
+
+</table>

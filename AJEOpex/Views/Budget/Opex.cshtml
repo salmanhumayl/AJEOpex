@@ -1,0 +1,319 @@
+﻿@model IList<AJEOpex.Models.OpexViewModel>
+@using System.Configuration
+
+@{
+    ViewBag.Title = "Opex";
+    int Rowindex=0;
+}
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery.dataTables.js"></script>
+
+<script type="text/javascript">
+    var DetailListVal = null;
+    DetailListVal = [];
+
+    function fnOpexMastersave()
+    {
+      //First Add Record in Opex Master Table then Add in the Html Table 
+      $.ajax
+          (
+          {
+              type: "Post",
+              url: 'http://localhost:55106/AMCOpex/SaveAMCOpex',
+              dataType: "json",
+              contentType: 'application/json; charset=utf-8',
+              data: JSON.stringify({ 'Description': $('#txtOpex').val() }),
+              success: function (response) {
+                  if (response > 0) {
+                      var table = $("#tblDetail").DataTable();
+                      var rowCount = $('#tblDetail tr').length;
+                      //alert(rowCount);
+                      table.row.add([
+                          '<input type=hidden id=OA_ID_' + rowCount + ' value=' + response + ' />',
+                          '<input type=checkbox  id=ItemSelection_' + rowCount + ' checked   onclick = "onClickHandler(this,' + rowCount + ')"/>',
+                          $('#txtOpex').val(),
+                          '<input type=text id=Actual_' + rowCount + ' value=' + $('#txtActual').val() + ' onchange = "CalculateVariation(' + rowCount + ')" />',
+                          '<input type=text id=BudgetYTD_' + rowCount + ' value=' + $('#txtBudgetYTD').val() + ' onchange = "CalculateVariation(' + rowCount + ')" />',
+                          '<input type=text disabled id=BudgetVar_' + rowCount + ' value=' + $('#txtBudgetVar').val() + ' />',
+                          '<textArea rows="2" cols="20" id=Comments_' + rowCount + ' >' + $('#txtComments').val() + '</textArea>',
+                      ]).draw();
+                  }
+                  else
+                  {
+                      alert("Error while adding recod in AMC_Opex")
+                  }
+              }
+          });
+    }
+    function onClickHandler(obj,rowIndex)
+    {
+        if (obj.checked == true) {
+            $('#Actual_' + rowIndex).removeAttr("disabled", "disabled");
+            $('#BudgetYTD_' + rowIndex).removeAttr("disabled", "disabled");
+           // $('#BudgetVar_' + rowIndex).removeAttr("disabled", "disabled");
+            $('#Comments_' + rowIndex).removeAttr("disabled", "disabled");
+        }
+        else
+        {
+            $('#Actual_' + rowIndex).attr('disabled', 'disabled');
+            $('#BudgetYTD_' + rowIndex).attr('disabled', 'disabled');
+           // $('#BudgetVar_' + rowIndex).attr('disabled', 'disabled');
+            $('#Comments_' + rowIndex).attr('disabled', 'disabled');
+            $('#Actual_' + rowIndex).val('');
+            $('#BudgetYTD_' + rowIndex).val('');
+            $('#BudgetVar_' + rowIndex).val('');
+            $('#Comments_' + rowIndex).val('');
+
+
+
+        }
+
+    }
+    function ItemDetail(OA_ID, Actual, BudgetYTD, BudgetVar, Comments)
+    {
+        var DetailJason = {
+            "OA_ID": OA_ID,
+            "Actual" : Actual,
+            "BudgetYTD": BudgetYTD,
+            "BudgetVar": BudgetVar,
+            "Comments": Comments
+        }
+        return DetailJason;
+    } 
+   
+
+    function CalculateVariation(rowIndex)
+    {
+        var Actual = $('#Actual_' + rowIndex).val();
+        var BudgetYTD = $('#BudgetYTD_' + rowIndex).val();
+
+        //if (Actual > 0 && BudgetYTD > 0) {
+        var variation = ((BudgetYTD - Actual) / Actual) * 100
+        $('#BudgetVar_' + rowIndex).val(Math.round(variation));
+        if ($('#BudgetVar_' + rowIndex).val() > 0)
+        {
+            $('#BudgetVar_' + rowIndex).css({ 'color': 'red'});
+        }
+
+
+       // }
+      
+    }
+</script>
+<script type="text/javascript">
+    $(document).ready(
+        function () {
+            var table = $("#tblDetail").DataTable(
+                {
+                    "bPaginate": false,
+                    "bFilter": false,
+                    "bInfo": false
+
+                }
+
+            ); //Initialise DataTable
+            $('#btnNewItem').click
+                (
+                function () {
+                    //if ($("#assign-dialog").dialog("instance") != undefined) {
+                      //  $("#assign-dialog").dialog("destroy");
+                   // }
+
+                    $('#assign-dialog').dialog({
+                        autoOpen: true,
+                        width: 400,
+                        height: 400,
+                        resizable: false,
+                        title: 'AMC',
+                        modal: true,
+                        buttons: [{
+                            text: "Save", click: function () {
+                                fnOpexMastersave();
+                                $(this).dialog("close");
+                            }
+                        }
+                            , { text: "Cancel", click: function () { $(this).dialog("close"); } }
+                        ]
+
+
+                    })
+                }
+                );
+
+         
+
+        });
+</script>
+
+<script>
+
+    function SaveOpex()
+    {
+            var table = $("#tblDetail").DataTable();
+            var rowCount = $('#tblDetail tr').length;
+            //debugger;
+            var lProcess;
+            for (var i = 1; i < rowCount; i++) {
+                lProcess = false;
+                var obj = document.getElementById("ItemSelection_" + i);
+                if (obj.checked == true) {
+                    //debugger;
+                    var OA_ID = document.getElementById("OA_ID_" + i).value;
+                    var Actual = document.getElementById("Actual_" + i).value;
+                    var BudgetYTD = document.getElementById("BudgetYTD_" + i).value;
+                    var BudgetVar = document.getElementById("BudgetVar_" + i).value;
+                    var Comments = document.getElementById("Comments_" + i).value;
+                    var objDetail = new ItemDetail(OA_ID, Actual, BudgetYTD, BudgetVar, Comments)
+                    
+                    DetailListVal.push(objDetail);
+                   //  alert(objDetail);
+                    // alert(JSON.stringify(objDetail));
+                }
+            }
+            //alert(JSON.stringify(DetailListVal));
+            $.ajax
+                (
+                {
+
+                    type: "Post",
+                    url: 'http://localhost:55106/Budget/SaveOMCOpexBudget',
+                    dataType: "json",
+                    contentType: 'application/json; charset=utf-8',
+                    data: JSON.stringify({ 'Model': DetailListVal, 'BudgetedYear': 2017, 'Department': 'IT' }),
+                    success: function (response) {
+                        alert(response);
+                        // window.location.href = '<%:Convert.ToString(ConfigurationManager.AppSettings["Sitepath"])%>' + "Home/index";
+                    }
+                }
+                );
+
+            }
+
+</script>
+
+<h2>Opex</h2>
+<input type="button" value="Add New Item" id="btnNewItem" class="btn btn-success" />
+
+
+ @Html.ActionLink("Save", " ", null,  new { onclick = "return ShowConfirm('Are you sure you want to Save?','Al Jaber Group LLC','c',''  );", @class = "btn btn-success", id = "btnNew" })
+
+
+    <table class="table">
+        <tr>
+            <td>Budget Year</td>
+            <td><input type="text" name="BudgetYear"/></td>
+            <td>Department</td>
+            <td><input type="text" name="department"/></td>
+        </tr>
+
+
+
+    </table>
+
+    <table id="tblDetail" class="table table-striped" >
+        <thead>
+            <tr>
+                <th></th>
+                <th></th>
+                <th>
+                    @Html.DisplayName("Budget Category")
+                </th>
+                <th>
+                    @Html.DisplayName("Actual")
+                </th>
+                <th>
+                    @Html.DisplayName("Budget YTD")
+                </th>
+                <th>
+                    @Html.DisplayName("Var % ")
+                </th>
+                <th>
+                    @Html.DisplayName("Comments")
+                </th>
+                
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                Rowindex= i + 1;
+                <tr>
+                    <td>
+                        @Html.Hidden("OA_ID_" + Rowindex, Model[i].OA_ID)
+                    </td>
+                    <td>
+                        @Html.CheckBox("ItemSelection_" + Rowindex, Model[i].ItemSelection,new { onclick = "onClickHandler(this,"+ Rowindex + ")"})
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => Model[i].Description)
+                    </td>
+                    <td>
+                        @Html.TextBox("Actual_"+ Rowindex, Model[i].Actual, new { @disabled = "true", onchange = "CalculateVariation(" + Rowindex + ")" })
+                    </td>
+                    <td>
+                        @Html.TextBox("BudgetYTD_" + Rowindex, Model[i].BudgetYTD, new { @disabled = "true", onchange = "CalculateVariation(" + Rowindex + ")" })
+                    </td>
+                    <td>
+                        @Html.TextBox("BudgetVar_" + Rowindex, Model[i].BudgetVar, new { @disabled = "true" })
+                    </td>
+                    <td>
+                        @Html.TextArea("Comments_" + Rowindex, Model[i].Comments, new { @disabled = "true" })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    
+
+
+
+<div id="assign-dialog" style="display:none">
+    <table class="table table-striped">
+        <tr>
+            <td>
+                Description
+            </td>
+            <td>
+                <input type="text" id="txtOpex" />
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Actual
+            </td>
+            <td>
+                <input type="text" id="txtActual" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Budget YTD
+            </td>
+            <td>
+                <input type="text" id="txtBudgetYTD" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Var %
+            </td>
+            <td>
+                <input type="text" id="txtBudgetVar" />
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                Comments
+            </td>
+            <td>
+                <input type="text"  id="txtComments" />
+            </td>
+        </tr>
+    </table>
+
+
+</div>
+
+
